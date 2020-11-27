@@ -10,12 +10,21 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/thmhoag/arkdrater/pkg/arkdrater/config"
 )
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	log.Println("starting up...")
+	log.Println("loading config...")
+	cfg, err := config.LoadConfig("config.yaml")
+	if err != nil {
+		log.Fatalln("unable to load config", err)
+	}
+	log.Println("confg loaded")
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "Hello!")
