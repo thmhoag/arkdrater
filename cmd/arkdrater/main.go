@@ -9,8 +9,10 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"text/template"
 	"time"
+
+	"github.com/thmhoag/arkdrater/handler"
+	"github.com/thmhoag/arkdrater/pkg/arkdrater/dynamic"
 
 	"github.com/thmhoag/arkdrater/pkg/arkdrater/config"
 )
@@ -20,26 +22,18 @@ func main() {
 
 	log.Println("starting up...")
 	log.Println("loading config...")
-	cfg, err := config.LoadConfig("config.yaml")
+	cfg, err := config.LoadConfig("config/config.yaml")
 	if err != nil {
 		log.Fatalln("unable to load config", err)
 	}
 
-	log.Println("confg loaded")
+	defaultReqHandler := &handler.DefaultHandler{
+		RateConverter: dynamic.NewRateConverter(http.DefaultClient, cfg.DynamicConfig),
+		Config: *cfg,
+	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		template, err := template.New("handlerResponse").Parse(handlerTemplate)
-		if err != nil {
-			log.Printf("error while marshling object. %s \n", err.Error())
-			return
-		}
-
-		if err := template.Execute(w, cfg.DynamicConfig); err != nil {
-			log.Printf("template.Execute error %s \n", err.Error())
-			return
-		}
-	})
+	mux.HandleFunc("/", defaultReqHandler.HandleRequest)
 
 	httpServer := &http.Server{
 		Addr:        fmt.Sprintf(":%s", cfg.Server.Port),
@@ -52,6 +46,7 @@ func main() {
 
 	// Run server
 	go func() {
+		log.Printf("listening on port %v\n", cfg.Server.Port)
 		if err := httpServer.ListenAndServe(); err != http.ErrServerClosed {
 			// it is fine to use Fatal here because it is not main gorutine
 			log.Fatalf("HTTP server ListenAndServe: %v", err)
@@ -72,7 +67,7 @@ func main() {
 
 	go func() {
 		<-signalChan
-		log.Fatalln("Terminating...")
+		log.Fatalln("terminating...")
 	}()
 
 	gracefulCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
@@ -89,9 +84,3 @@ func main() {
 	defer os.Exit(0)
 	return
 }
-
-const handlerTemplate = `
-{{- range $multiplier, $value := .Multipliers }}
-{{ $multiplier }}={{ printf "%.1f" $value }}
-{{- end }}
-`

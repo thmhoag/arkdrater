@@ -12,6 +12,6 @@ FROM scratch as final
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /app/bin/arkdrater /
-COPY default.config.yaml /config.yaml
+COPY default.config.yaml /config/config.yaml
 
 ENTRYPOINT [ "/arkdrater" ]

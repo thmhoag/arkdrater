@@ -2,6 +2,7 @@
 **
 
 !cmd/
+!handler/
 !pkg/
 !go.mod
 !go.sum
