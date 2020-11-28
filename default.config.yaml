@@ -1,0 +1,17 @@
+server:
+  port: 8080
+dynamicConfig:
+  multipliers:
+    TamingSpeedMultiplier: 1
+    HarvestAmountMultiplier: 1
+    XPMultiplier: 1
+    MatingIntervalMultiplier: 1
+    BabyMatureSpeedMultiplier: 1
+    EggHatchSpeedMultiplier: 1
+    BabyFoodConsumptionSpeedMultiplier: 1
+    CropGrowthSpeedMultiplier: 1
+    MatingSpeedMultiplier: 1
+    BabyCuddleIntervalMultiplier: 1
+    BabyImprintAmountMultiplier: 1
+    CustomRecipeEffectivenessMultiplier: 1
+    HexagonRewardMultiplier: 1

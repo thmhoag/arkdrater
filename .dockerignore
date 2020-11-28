@@ -1,0 +1,8 @@
+# whitelist approach
+**
+
+!cmd/
+!pkg/
+!go.mod
+!go.sum
+!default.config.yaml

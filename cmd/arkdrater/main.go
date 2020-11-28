@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"text/template"
 	"time"
 
 	"github.com/thmhoag/arkdrater/pkg/arkdrater/config"
@@ -23,15 +24,25 @@ func main() {
 	if err != nil {
 		log.Fatalln("unable to load config", err)
 	}
+
 	log.Println("confg loaded")
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		fmt.Fprintf(w, "Hello!")
+		template, err := template.New("handlerResponse").Parse(handlerTemplate)
+		if err != nil {
+			log.Printf("error while marshling object. %s \n", err.Error())
+			return
+		}
+
+		if err := template.Execute(w, cfg.DynamicConfig); err != nil {
+			log.Printf("template.Execute error %s \n", err.Error())
+			return
+		}
 	})
 
 	httpServer := &http.Server{
-		Addr:        ":8080",
+		Addr:        fmt.Sprintf(":%s", cfg.Server.Port),
 		Handler:     mux,
 		BaseContext: func(_ net.Listener) context.Context { return ctx },
 	}
@@ -57,27 +68,30 @@ func main() {
 	)
 
 	<-signalChan
-	log.Print("os.Interrupt - shutting down...\n")
+	log.Println("shutting down...")
 
 	go func() {
 		<-signalChan
-		log.Fatal("os.Kill - terminating...\n")
+		log.Fatalln("Terminating...")
 	}()
 
-	gracefullCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
+	gracefulCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelShutdown()
 
-	if err := httpServer.Shutdown(gracefullCtx); err != nil {
+	if err := httpServer.Shutdown(gracefulCtx); err != nil {
 		log.Printf("shutdown error: %v\n", err)
 		defer os.Exit(1)
 		return
-	} else {
-		log.Printf("gracefully stopped\n")
 	}
 
-	// manually cancel context if not using httpServer.RegisterOnShutdown(cancel)
 	cancel()
 
 	defer os.Exit(0)
 	return
 }
+
+const handlerTemplate = `
+{{- range $multiplier, $value := .Multipliers }}
+{{ $multiplier }}={{ printf "%.1f" $value }}
+{{- end }}
+`
