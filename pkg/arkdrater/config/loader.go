@@ -2,17 +2,18 @@ package config
 
 import (
 	"errors"
-	"github.com/thmhoag/arkdrater/pkg/arkdrater/dynamic"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 
+	"github.com/thmhoag/arkdrater/pkg/arkdrater/dynamic"
+
 	"github.com/kelseyhightower/envconfig"
 	"gopkg.in/yaml.v2"
 )
 
-const envMultiPrefix = "arkdratermult_"
+const envMultiPrefix = "arkdratermulti_"
 
 func LoadConfig(path string) (*Config, error) {
 	cfg := &Config{
