@@ -1,6 +1,7 @@
 package dynamic
 
 import (
+	"gopkg.in/yaml.v2"
 	"io"
 	"log"
 	"text/template"
@@ -13,6 +14,15 @@ type Config struct {
 	EnableFullDump               bool               `yaml:"EnableFullDump" envconfig:"EnableFullDump"`
 	GUseServerNetSpeedCheck      bool               `yaml:"GUseServerNetSpeedCheck" envconfig:"GUseServerNetSpeedCheck"`
 	bUseAlarmNotifications       bool               `yaml:"bUseAlarmNotifications" envconfig:"bUseAlarmNotifications"`
+}
+
+func (c *Config) GetCopy() *Config {
+	// this whole function is a hack
+	// need a better designed config to avoid deep copying
+	copyBytes, _ := yaml.Marshal(c)
+	copy := &Config{}
+	yaml.Unmarshal(copyBytes, copy)
+	return copy
 }
 
 func (c *Config) WriteIniStr(w io.Writer) error {

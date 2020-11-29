@@ -1,6 +1,7 @@
 package dynamic
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -19,34 +20,35 @@ type HttpClient interface {
 
 type rateConv struct {
 	http HttpClient
-	cfg Config
 }
 
 // RateConverter can convert base config rates to special event rates
 type RateConverter interface {
 	// GetConvertedRates multiplies the base rates by the current official event rates
-	GetConvertedRates() (result *Config, err error)
+	GetConvertedRates(baseCfg *Config) (result *Config, err error)
 }
 
 // NewRateConverter returns a new RateConverter with the specified base config
-func NewRateConverter(http HttpClient, cfg Config) RateConverter {
+func NewRateConverter(http HttpClient) RateConverter {
 	if http == nil {
 		panic("http cannot be nil")
 	}
 
-	return &rateConv{http: http, cfg: cfg}
+	return &rateConv{http: http}
 }
 
-func (r rateConv) GetConvertedRates() (result *Config, err error) {
-	newCfg := r.cfg
-	result = &newCfg
-
+func (r rateConv) GetConvertedRates(baseCfg *Config) (result *Config, err error) {
+	result = baseCfg.GetCopy()
 	resp, err := r.http.Get(OfficialDynamicConfigUrl)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("invalid response for official rates: %v\n%v\n", resp.StatusCode, resp.Status)
+	}
 
 	offDynaConfBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -56,7 +58,9 @@ func (r rateConv) GetConvertedRates() (result *Config, err error) {
 	offDynaConfMap := make(map[string]float32)
 	offDynaConfLines := strings.Split(string(offDynaConfBody), "\n")
 	for _, line := range offDynaConfLines {
-		splitLine := strings.Split(line, "=")
+		// make sure we remove artifacts from Windows line endings
+		cleansedLine := strings.ReplaceAll(line, "\r", "")
+		splitLine := strings.Split(cleansedLine, "=")
 		if len(splitLine) != 2 {
 			// error?
 			continue
@@ -77,7 +81,7 @@ func (r rateConv) GetConvertedRates() (result *Config, err error) {
 		offDynaConfMap[multName] = float32(multVal)
 	}
 
-	for name, value := range r.cfg.Multipliers {
+	for name, value := range result.Multipliers {
 		if officialValue, ok := offDynaConfMap[name]; ok {
 			newValue := value * officialValue
 			result.Multipliers[name] = newValue

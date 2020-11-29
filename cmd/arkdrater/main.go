@@ -28,8 +28,8 @@ func main() {
 	}
 
 	defaultReqHandler := &handler.DefaultHandler{
-		RateConverter: dynamic.NewRateConverter(http.DefaultClient, cfg.DynamicConfig),
-		Config: *cfg,
+		RateConverter: dynamic.NewRateConverter(http.DefaultClient),
+		Config: cfg,
 	}
 
 	mux := http.NewServeMux()

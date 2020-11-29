@@ -10,11 +10,13 @@ import (
 
 type DefaultHandler struct {
 	RateConverter dynamic.RateConverter
-	Config config.Config
+	Config *config.Config
 }
 
 func (h *DefaultHandler) HandleRequest(w http.ResponseWriter, req *http.Request) {
-	convertedRatesCfg, err:= h.RateConverter.GetConvertedRates()
+	// this is a hack, should probably rethink how the config works
+	cfg := h.Config.DynamicConfig.GetCopy()
+	convertedRatesCfg, err:= h.RateConverter.GetConvertedRates(cfg)
 	if err != nil {
 		log.Printf("error converting rates using official multipliers: %v\n", err)
 		writeCfg(w, &h.Config.DynamicConfig)
