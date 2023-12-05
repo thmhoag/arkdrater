@@ -10,7 +10,7 @@ import (
 
 const (
 	// OfficialDynamicConfigUrl is the url to Studio Wildcard's official dynamic config
-	OfficialDynamicConfigUrl string = "http://arkdedicated.com/dynamicconfig.ini"
+	OfficialDynamicConfigUrl string = "https://cdn2.arkdedicated.com/asa/dynamicconfig.ini"
 )
 
 // HttpClient is an interface for the official http.Client
